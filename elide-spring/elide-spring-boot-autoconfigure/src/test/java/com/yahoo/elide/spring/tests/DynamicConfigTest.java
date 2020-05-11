@@ -47,12 +47,12 @@ public class DynamicConfigTest extends IntegrationTest {
     @Test
     public void jsonApiGetViewTest() {
         String apiGetViewRequest = when()
-                .get("/json/PlayerStatsView")
+                .get("/json/playerStatsView")
                 .then()
                 .body(equalTo(
                         data(
                                 resource(
-                                        type("PlayerStatsView"),
+                                        type("playerStatsView"),
                                         id("0"),
                                         attributes(
                                                 attr("countryCode", "USA"),
@@ -64,7 +64,7 @@ public class DynamicConfigTest extends IntegrationTest {
                         ).toJSON())
                 )
                 .statusCode(HttpStatus.SC_OK).extract().response().asString();
-        String apiGetViewExpected = "{\"data\":[{\"type\":\"PlayerStatsView\",\"id\":\"0\",\"attributes\":{\"countryCode\":\"USA\",\"createdOn\":\"2000-10-01T04:00Z\",\"highScore\":null,\"name\":\"SerenaWilliams\"}}]}";
+        String apiGetViewExpected = "{\"data\":[{\"type\":\"playerStatsView\",\"id\":\"0\",\"attributes\":{\"countryCode\":\"USA\",\"createdOn\":\"2000-10-01T04:00Z\",\"highScore\":null,\"name\":\"SerenaWilliams\"}}]}";
         assertEquals(apiGetViewRequest, apiGetViewExpected);
     }
 
@@ -110,7 +110,7 @@ public class DynamicConfigTest extends IntegrationTest {
     @Test
     public void jsonApiPostGetViewTest() {
         when()
-                .get("/json/PlayerStatsView")
+                .get("/json/playerStatsView")
                 .then()
                 .body("data.id", hasItems("1"))
                 .body("data.attributes.name", hasItems("SaniaMirza", "SerenaWilliams"))

@@ -33,7 +33,7 @@ public class ElideDynamicEntityCompiler {
 
     public static ArrayList<String> classNames = new ArrayList<String>();
 
-    public static final String PACKAGE_NAME = "com.yahoo.elide.contrib.dynamicconfig.model.";
+    public static final String PACKAGE_NAME = "dynamicconfig.models.";
     private Map<String, Class<?>> compiledObjects;
 
     private InMemoryJavaCompiler compiler = InMemoryJavaCompiler.newInstance();

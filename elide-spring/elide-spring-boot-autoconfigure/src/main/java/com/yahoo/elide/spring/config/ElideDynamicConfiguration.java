@@ -6,8 +6,6 @@
 package com.yahoo.elide.spring.config;
 
 import com.yahoo.elide.contrib.dynamicconfighelpers.compile.ElideDynamicEntityCompiler;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.annotation.FromSubquery;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.annotation.FromTable;
 import com.yahoo.elide.datastores.jpa.PersistenceUnitInfoImpl;
 import com.yahoo.elide.utils.ClassScanner;
 
@@ -74,10 +72,6 @@ public class ElideDynamicConfiguration {
             //Bind entity classes from classpath to Persistence Unit
             ArrayList<Class> bindClasses = new ArrayList<>();
             bindClasses.addAll(ClassScanner.getAnnotatedClasses(Entity.class));
-
-            //Bind FromTable/FromSubSelect classes from classpath to Persistence Unit
-            bindClasses.addAll(ClassScanner.getAnnotatedClasses(FromTable.class));
-            bindClasses.addAll(ClassScanner.getAnnotatedClasses(FromSubquery.class));
 
             //Map of JPA Properties to be be passed to EntityManager
             Map<String, String> jpaPropMap = jpaProperties.getProperties();
