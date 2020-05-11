@@ -170,6 +170,15 @@ public abstract class QueryEngine {
     public abstract Iterable<Object> executeQuery(Query query, boolean useCache);
 
     /**
+     * Builds the specified {@link Query} against a specific persistent storage, which understand the provided
+     * {@link Query}.
+     *
+     * @param query    The query customized for a particular persistent storage or storage client
+     * @return query string
+     */
+    public abstract String showQuery(Query query);
+
+    /**
      * Returns the schema for a given entity class.
      * @param classAlias json type alias for that class
      * @return The schema that represents the provided entity.

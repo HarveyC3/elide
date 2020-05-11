@@ -177,6 +177,11 @@ public class SQLQueryEngine extends QueryEngine {
         }
     }
 
+    @Override
+    public String showQuery(Query query) {
+        return toSQL(query).toString();
+    }
+
     /**
      * Translates the client query into SQL.
      *

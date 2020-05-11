@@ -657,4 +657,31 @@ public class QueryEngineTest extends SQLUnitTest {
         assertEquals(stats1, results.get(0));
         assertEquals(stats2, results.get(1));
     }
+
+    @Test
+    public void testShowQueryDebug() {
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .groupByDimension(toProjection(playerStatsTable.getDimension("countryUnSeats")))
+                .build();
+        String expectedQueryStr = "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore," +
+                "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats AS countryUnSeats " +
+                "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
+                "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
+                "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id  " +
+                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats";
+        assertEquals(expectedQueryStr, engine.showQuery(query).trim());
+    }
+
+    // TODO: Should this be an error?
+//    @Test
+//    public void testShowQueryNoMetricsOrDimensions() {
+//        Query query = Query.builder()
+//                .table(playerStatsTable)
+//                .build();
+//        String expectedQueryStr = "SELECT DISTINCT  " +
+//                "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats";
+//        assertEquals(expectedQueryStr, engine.showQuery(query).trim());
+//    }
 }
