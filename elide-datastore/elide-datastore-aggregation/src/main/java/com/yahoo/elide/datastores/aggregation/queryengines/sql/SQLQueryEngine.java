@@ -178,16 +178,34 @@ public class SQLQueryEngine extends QueryEngine {
     }
 
     @Override
-    public String showQuery(Query query) {
-        return toSQL(query).toString();
+    public List<String> showQueries(Query query) {
+
+        List<String> queries;
+        queries = new ArrayList<String>();
+        String query = toSQL(query).toString();
+
+        queries.add(query);
+
+
+        Pagination pagination;
+        pagination = query.getPagination();
+        if (pagination != null) {
+            if (pagination.returnPageTotals()) {
+                SQLQuery paginationSQL = toPageTotalSQL(sql);
+                queries.add(paginationSQL);
+                }
+
+            }
+
+        return queries;
     }
 
-    /**
-     * Translates the client query into SQL.
-     *
-     * @param query the client query.
-     * @return the SQL query.
-     */
+        /**
+         * Translates the client query into SQL.
+         *
+         * @param query the client query.
+         * @return the SQL query.
+         */
     private SQLQuery toSQL(Query query) {
         Set<ColumnProjection> groupByDimensions = new LinkedHashSet<>(query.getGroupByDimensions());
         Set<TimeDimensionProjection> timeDimensions = new LinkedHashSet<>(query.getTimeDimensions());

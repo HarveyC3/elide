@@ -176,7 +176,7 @@ public abstract class QueryEngine {
      * @param query    The query customized for a particular persistent storage or storage client
      * @return query string
      */
-    public abstract String showQuery(Query query);
+    public abstract List<String> showQueries(Query query);
 
     /**
      * Returns the schema for a given entity class.

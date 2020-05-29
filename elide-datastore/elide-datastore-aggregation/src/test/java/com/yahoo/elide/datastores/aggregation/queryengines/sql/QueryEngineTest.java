@@ -658,20 +658,45 @@ public class QueryEngineTest extends SQLUnitTest {
         assertEquals(stats2, results.get(1));
     }
 
+    // No Pagination
     @Test
-    public void testShowQueryDebug() {
+    public void testShowQueriesDebug() {
         Query query = Query.builder()
                 .table(playerStatsTable)
                 .metric(invoke(playerStatsTable.getMetric("highScore")))
                 .groupByDimension(toProjection(playerStatsTable.getDimension("countryUnSeats")))
                 .build();
+
+        // Notice the whitespace at the end of the query
         String expectedQueryStr = "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore," +
                 "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats AS countryUnSeats " +
                 "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
                 "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
                 "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id  " +
-                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats";
-        assertEquals(expectedQueryStr, engine.showQuery(query).trim());
+                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats ";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr)
+        assertEquals(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesPagination() {
+        // PaginationImpl pagination = new PaginationImpl(
+        //                PlayerStats.class,
+        //                0,
+        //                1,
+        //                PaginationImpl.DEFAULT_PAGE_LIMIT,
+        //                PaginationImpl.MAX_PAGE_LIMIT,
+        //                true,
+        //                false
+        //        );
+        //
+        //        Query query = Query.builder()
+        //                .table(playerStatsTable)
+        //                .metric(invoke(playerStatsTable.getMetric("lowScore")))
+        //                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+        //                .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+        //                .pagination(pagination)
+        //                .build();
     }
 
     // TODO: Should this be an error?
