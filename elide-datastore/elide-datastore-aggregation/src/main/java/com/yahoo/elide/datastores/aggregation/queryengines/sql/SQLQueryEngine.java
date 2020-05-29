@@ -179,24 +179,19 @@ public class SQLQueryEngine extends QueryEngine {
 
     @Override
     public List<String> showQueries(Query query) {
-
         List<String> queries;
         queries = new ArrayList<String>();
-        String query = toSQL(query).toString();
+        SQLQuery sql = toSQL(query);
 
-        queries.add(query);
-
-
-        Pagination pagination;
-        pagination = query.getPagination();
+        Pagination pagination = query.getPagination();
         if (pagination != null) {
             if (pagination.returnPageTotals()) {
                 SQLQuery paginationSQL = toPageTotalSQL(sql);
-                queries.add(paginationSQL);
-                }
-
+                queries.add(paginationSQL.toString());
             }
+        }
 
+        queries.add(sql.toString());
         return queries;
     }
 

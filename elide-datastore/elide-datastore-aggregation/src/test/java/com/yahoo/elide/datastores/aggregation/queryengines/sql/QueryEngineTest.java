@@ -29,6 +29,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -673,8 +674,8 @@ public class QueryEngineTest extends SQLUnitTest {
                 "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
                 "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
                 "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id  " +
-                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats ";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr)
+                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats  ";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         assertEquals(expectedQueryList, engine.showQueries(query));
     }
 
