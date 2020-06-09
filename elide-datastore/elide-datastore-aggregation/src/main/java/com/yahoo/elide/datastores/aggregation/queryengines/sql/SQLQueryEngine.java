@@ -182,6 +182,9 @@ public class SQLQueryEngine extends QueryEngine {
         List<String> queries;
         queries = new ArrayList<String>();
         SQLQuery sql = toSQL(query);
+        EntityManager entityManager = null;
+        entityManager = entityManagerFactory.createEntityManager();
+        javax.persistence.Query jpaQuery = entityManager.createNativeQuery(sql.toString());
 
         Pagination pagination = query.getPagination();
         if (pagination != null) {
@@ -190,7 +193,7 @@ public class SQLQueryEngine extends QueryEngine {
                 queries.add(paginationSQL.toString());
             }
         }
-
+        supplyFilterQueryParameters(query, jpaQuery);
         queries.add(sql.toString());
         return queries;
     }

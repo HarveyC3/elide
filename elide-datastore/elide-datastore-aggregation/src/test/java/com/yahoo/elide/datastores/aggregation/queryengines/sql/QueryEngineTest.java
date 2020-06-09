@@ -6,10 +6,13 @@
 package com.yahoo.elide.datastores.aggregation.queryengines.sql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.yahoo.elide.core.Path;
 import com.yahoo.elide.core.filter.FilterPredicate;
 import com.yahoo.elide.core.filter.Operator;
+import com.yahoo.elide.core.filter.expression.AndFilterExpression;
+import com.yahoo.elide.core.filter.expression.OrFilterExpression;
 import com.yahoo.elide.core.pagination.PaginationImpl;
 import com.yahoo.elide.core.sort.SortingImpl;
 import com.yahoo.elide.datastores.aggregation.example.PlayerStats;
@@ -26,10 +29,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -659,7 +663,7 @@ public class QueryEngineTest extends SQLUnitTest {
         assertEquals(stats2, results.get(1));
     }
 
-    // No Pagination
+/*
     @Test
     public void testShowQueriesDebug() {
         Query query = Query.builder()
@@ -668,36 +672,240 @@ public class QueryEngineTest extends SQLUnitTest {
                 .groupByDimension(toProjection(playerStatsTable.getDimension("countryUnSeats")))
                 .build();
 
-        // Notice the whitespace at the end of the query
-        String expectedQueryStr = "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore," +
-                "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats AS countryUnSeats " +
-                "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
-                "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
-                "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id  " +
-                "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats  ";
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        + "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats AS countryUnSeats "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
+                        + "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country "
+                        + "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id "
+                        + "= com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id  "
+                        + "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.un_seats";
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        assertEquals(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+ */
+
+    @Test
+    public void testShowQueriesWhereMetricsOnly() throws Exception {
+        FilterPredicate predicate = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .metric(invoke(playerStatsTable.getMetric("lowScore")))
+                .whereFilter(predicate)
+                .build();
+        List<FilterPredicate.FilterParameter> params = predicate.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        + "MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS lowScore "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "WHERE MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder();
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesWhereDimsOnly() throws Exception {
+        FilterPredicate predicate = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .whereFilter(predicate)
+                .build();
+
+        String expectedQueryStr =
+                "SELECT DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "WHERE com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesWhereMetricsAndDims() throws Exception {
+        FilterPredicate ratingFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        FilterPredicate highScoreFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .whereFilter(new AndFilterExpression(ratingFilter, highScoreFilter))
+                .build();
+        List<FilterPredicate.FilterParameter> params = highScoreFilter.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "WHERE (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
+                        + "AND MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder()
+                        + ") GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesWhereMetricsOrDims() throws Exception {
+        FilterPredicate ratingFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        FilterPredicate highScoreFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .whereFilter(new OrFilterExpression(ratingFilter, highScoreFilter))
+                .build();
+        List<FilterPredicate.FilterParameter> params = highScoreFilter.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "WHERE (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
+                        + "OR MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder()
+                        + ") GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesHavingMetricsOnly() throws Exception {
+        FilterPredicate predicate = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .metric(invoke(playerStatsTable.getMetric("lowScore")))
+                .havingFilter(predicate)
+                .build();
+        List<FilterPredicate.FilterParameter> params = predicate.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        + "MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS lowScore "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats    "
+                        + "HAVING MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder();
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesHavingDimsOnly() throws Exception {
+        FilterPredicate predicate = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .havingFilter(predicate)
+                .build();
+
+        String expectedQueryStr =
+                "SELECT DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats    "
+                        + "HAVING com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesHavingMetricsAndDims() throws Exception {
+        FilterPredicate ratingFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        FilterPredicate highScoreFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .havingFilter(new AndFilterExpression(ratingFilter, highScoreFilter))
+                .build();
+        List<FilterPredicate.FilterParameter> params = highScoreFilter.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats   "
+                        + "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating "
+                        + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
+                        + "AND MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder() + ")";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
+    }
+
+    @Test
+    public void testShowQueriesHavingMetricsOrDims() throws Exception {
+        FilterPredicate ratingFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "overallRating"),
+                Operator.NOTNULL, new ArrayList<Object>());
+        FilterPredicate highScoreFilter = new FilterPredicate(
+                new Path(PlayerStats.class, dictionary, "highScore"),
+                Operator.GT,
+                Lists.newArrayList(9000));
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .metric(invoke(playerStatsTable.getMetric("highScore")))
+                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                .havingFilter(new OrFilterExpression(ratingFilter, highScoreFilter))
+                .build();
+        List<FilterPredicate.FilterParameter> params = highScoreFilter.getParameters();
+
+        String expectedQueryStr =
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
+                        +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats   "
+                        + "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating "
+                        + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
+                        + "OR MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
+                        + params.get(0).getPlaceholder() + ")";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
 
     @Test
     public void testShowQueriesPagination() {
-        // PaginationImpl pagination = new PaginationImpl(
-        //                PlayerStats.class,
-        //                0,
-        //                1,
-        //                PaginationImpl.DEFAULT_PAGE_LIMIT,
-        //                PaginationImpl.MAX_PAGE_LIMIT,
-        //                true,
-        //                false
-        //        );
-        //
-        //        Query query = Query.builder()
-        //                .table(playerStatsTable)
-        //                .metric(invoke(playerStatsTable.getMetric("lowScore")))
-        //                .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
-        //                .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
-        //                .pagination(pagination)
-        //                .build();
+//         PaginationImpl pagination = new PaginationImpl(
+//                        PlayerStats.class,
+//                        0,
+//                        1,
+//                        PaginationImpl.DEFAULT_PAGE_LIMIT,
+//                        PaginationImpl.MAX_PAGE_LIMIT,
+//                        true,
+//                        false
+//                );
+//
+//                Query query = Query.builder()
+//                        .table(playerStatsTable)
+//                        .metric(invoke(playerStatsTable.getMetric("lowScore")))
+//                        .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+//                        .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+//                        .pagination(pagination)
+//                        .build();
     }
 
     // TODO: Should this be an error?
@@ -710,4 +918,19 @@ public class QueryEngineTest extends SQLUnitTest {
 //                "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats";
 //        assertEquals(expectedQueryStr, engine.showQuery(query).trim());
 //    }
+
+    // Helper for comparing lists of queries.
+    private void compareQueryLists(List<String> expected, List<String> actual) {
+        if (expected == null && actual == null) {
+            return;
+        } else if (expected == null) {
+            fail("Expected a null query List, but actual was non-null");
+        } else if (actual == null) {
+            fail("Expected a non-null query List, but actual was null");
+        }
+        assertEquals(expected.size(), actual.size(), "Query List sizes do not match");
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(expected.get(i).trim(), actual.get(i).trim());
+        }
+    }
 }
