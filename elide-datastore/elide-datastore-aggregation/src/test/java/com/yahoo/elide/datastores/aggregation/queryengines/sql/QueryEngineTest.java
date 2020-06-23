@@ -868,26 +868,43 @@ public class QueryEngineTest extends SQLUnitTest {
     }
 
 
-
     @Test
     public void testShowQueriesPagination() {
-//         PaginationImpl pagination = new PaginationImpl(
-//                        PlayerStats.class,
-//                        0,
-//                        1,
-//                        PaginationImpl.DEFAULT_PAGE_LIMIT,
-//                        PaginationImpl.MAX_PAGE_LIMIT,
-//                        true,
-//                        false
-//                );
-//
-//                Query query = Query.builder()
-//                        .table(playerStatsTable)
-//                        .metric(invoke(playerStatsTable.getMetric("lowScore")))
-//                        .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
-//                        .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
-//                        .pagination(pagination)
-//                        .build();
+         PaginationImpl pagination = new PaginationImpl(
+                        PlayerStats.class,
+                        0,
+                        1,
+                        PaginationImpl.DEFAULT_PAGE_LIMIT,
+                        PaginationImpl.MAX_PAGE_LIMIT,
+                        true,
+                        false
+                );
+
+         Query query = Query.builder()
+                        .table(playerStatsTable)
+                        .metric(invoke(playerStatsTable.getMetric("lowScore")))
+                        .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                        .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+                        .pagination(pagination)
+                        .build();
+         String expectedQueryStr1 =
+                 "SELECT COUNT(DISTINCT(com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
+                         "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate)) FROM " +
+                         "playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats     ";
+         String expectedQueryStr2 =
+                "SELECT MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS " +
+                        "lowScore,com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS " +
+                        "overallRating,PARSEDATETIME(FORMATDATETIME(" +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, 'yyyy-MM-dd'), " +
+                        "'yyyy-MM-dd') AS recordedDate FROM playerStats AS " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats   " +
+                        "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
+                        "PARSEDATETIME(FORMATDATETIME(" +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, 'yyyy-MM-dd'), " +
+                        "'yyyy-MM-dd')  ";
+        List<String> expectedQueryList = Arrays.asList(expectedQueryStr1);
+        expectedQueryList.add(expectedQueryStr2);
+        compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
 
     // Helper for comparing lists of queries.
@@ -1039,7 +1056,7 @@ public class QueryEngineTest extends SQLUnitTest {
     }
 
     @Test
-    public void testShowQuerySelectFromSubquery(){
+    public void testShowQuerySelectFromSubquery() {
 
 //        Query query = Query.builder()
 //                .table(playerStatsViewTable)
@@ -1055,6 +1072,5 @@ public class QueryEngineTest extends SQLUnitTest {
 //
 //        assertEquals(1, results.size());
 //        assertEquals(stats2, results.get(0));
-
-=======
+    }
 }
