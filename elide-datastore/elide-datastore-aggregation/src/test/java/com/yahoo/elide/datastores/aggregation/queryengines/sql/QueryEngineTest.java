@@ -25,7 +25,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -659,6 +664,16 @@ public class QueryEngineTest extends SQLUnitTest {
     }
 
     @Test
+    public void testShowQueryNoMetricsOrDimensions() {
+        Query query = Query.builder()
+                .table(playerStatsTable)
+                .build();
+        String expectedQueryStr = "SELECT DISTINCT  " +
+                "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats";
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
+    }
+
+    @Test
     public void testShowQueriesWhereMetricsOnly() throws Exception {
         FilterPredicate predicate = new FilterPredicate(
                 new Path(PlayerStats.class, dictionary, "highScore"),
@@ -675,11 +690,10 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         + "MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS lowScore "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "WHERE MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder();
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -695,10 +709,9 @@ public class QueryEngineTest extends SQLUnitTest {
 
         String expectedQueryStr =
                 "SELECT DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "WHERE com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -721,13 +734,12 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "WHERE (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "AND MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder()
                         + ") GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -750,13 +762,12 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats  "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "WHERE (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "OR MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder()
                         + ") GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -776,11 +787,10 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         + "MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS lowScore "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats    "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "HAVING MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder();
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -796,10 +806,9 @@ public class QueryEngineTest extends SQLUnitTest {
 
         String expectedQueryStr =
                 "SELECT DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats    "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "HAVING com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -822,13 +831,12 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats   "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating "
                         + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "AND MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder() + ")";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
     @Test
@@ -851,29 +859,14 @@ public class QueryEngineTest extends SQLUnitTest {
         String expectedQueryStr =
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore,"
                         +"com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
-                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats   "
+                        + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating "
                         + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "OR MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder() + ")";
-        List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
-        compareQueryLists(expectedQueryList, engine.showQueries(query));
+        compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
-    // Helper for comparing lists of queries.
-    private void compareQueryLists(List<String> expected, List<String> actual) {
-        if (expected == null && actual == null) {
-            return;
-        } else if (expected == null) {
-            fail("Expected a null query List, but actual was non-null");
-        } else if (actual == null) {
-            fail("Expected a non-null query List, but actual was null");
-        }
-        assertEquals(expected.size(), actual.size(), "Query List sizes do not match");
-        for (int i = 0; i < expected.size(); i++) {
-            assertEquals(expected.get(i).trim(), actual.get(i).trim());
-        }
-    }
 
 
     @Test
@@ -897,8 +890,32 @@ public class QueryEngineTest extends SQLUnitTest {
 //                        .build();
     }
 
+    // Helper for comparing lists of queries.
+    private void compareQueryLists(List<String> expected, List<String> actual) {
+        if (expected == null && actual == null) {
+            return;
+        } else if (expected == null) {
+            fail("Expected a null query List, but actual was non-null");
+        } else if (actual == null) {
+            fail("Expected a non-null query List, but actual was null");
+        }
+        assertEquals(expected.size(), actual.size(), "Query List sizes do not match");
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(combineWhitespace(expected.get(i).trim()), combineWhitespace(actual.get(i).trim()));
+        }
+    }
 
-    /*
+    // Automatically convert a single expected string into a List with one element
+    private void compareQueryLists(String expected, List<String> actual) {
+        compareQueryLists(Arrays.asList(expected), actual);
+    }
+
+    // Helper to remove repeated whitespace chars before comparing queries
+    private Pattern repeatedWhitespacePattern = Pattern.compile("\\s\\s*");
+    private String combineWhitespace(String input) {
+        return repeatedWhitespacePattern.matcher(input).replaceAll(" ");
+    }
+        /*
     @Test
     public void testShowQueriesDebug() {
         Query query = Query.builder()
@@ -1039,5 +1056,5 @@ public class QueryEngineTest extends SQLUnitTest {
 //        assertEquals(1, results.size());
 //        assertEquals(stats2, results.get(0));
 
-    }
+=======
 }
