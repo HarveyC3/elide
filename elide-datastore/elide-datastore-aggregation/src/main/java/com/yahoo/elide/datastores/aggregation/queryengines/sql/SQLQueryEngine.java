@@ -5,8 +5,6 @@
  */
 package com.yahoo.elide.datastores.aggregation.queryengines.sql;
 
-import static com.yahoo.elide.utils.TypeHelper.getTypeAlias;
-
 import com.yahoo.elide.core.EntityDictionary;
 import com.yahoo.elide.core.TimedFunction;
 import com.yahoo.elide.core.exceptions.InvalidPredicateException;
@@ -14,44 +12,28 @@ import com.yahoo.elide.core.filter.FilterPredicate;
 import com.yahoo.elide.core.filter.expression.PredicateExtractionVisitor;
 import com.yahoo.elide.datastores.aggregation.QueryEngine;
 import com.yahoo.elide.datastores.aggregation.metadata.MetaDataStore;
-import com.yahoo.elide.datastores.aggregation.metadata.models.Column;
-import com.yahoo.elide.datastores.aggregation.metadata.models.Dimension;
-import com.yahoo.elide.datastores.aggregation.metadata.models.Metric;
-import com.yahoo.elide.datastores.aggregation.metadata.models.Table;
-import com.yahoo.elide.datastores.aggregation.metadata.models.TimeDimension;
-import com.yahoo.elide.datastores.aggregation.query.Cache;
-import com.yahoo.elide.datastores.aggregation.query.ColumnProjection;
-import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
-import com.yahoo.elide.datastores.aggregation.query.Query;
-import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
+import com.yahoo.elide.datastores.aggregation.metadata.models.*;
+import com.yahoo.elide.datastores.aggregation.query.*;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.AbstractSqlQueryDialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.impl.DefaultDialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLMetric;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLReferenceTable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLTable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metric.SQLMetricFunction;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLColumnProjection;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLMetricProjection;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLQuery;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLQueryConstructor;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLQueryTemplate;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.SQLTimeDimensionProjection;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.query.*;
 import com.yahoo.elide.request.Argument;
 import com.yahoo.elide.request.Pagination;
 import com.yahoo.elide.utils.coerce.CoerceUtil;
-
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.jpa.QueryHints;
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.yahoo.elide.utils.TypeHelper.getTypeAlias;
 
 /**
  * QueryEngine for SQL backed stores.
@@ -61,14 +43,20 @@ public class SQLQueryEngine extends QueryEngine {
     private final EntityManagerFactory entityManagerFactory;
 
     private final SQLReferenceTable referenceTable;
+    private final AbstractSqlQueryDialect dialect;
 
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache) {
+        this(metaDataStore,entityManagerFactory,cache, new DefaultDialect());
+    }
+    public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache,
+                          AbstractSqlQueryDialect abstractSqlQueryDialect) {
         super(metaDataStore, cache);
         this.entityManagerFactory = entityManagerFactory;
         this.referenceTable = new SQLReferenceTable(metaDataStore);
+        this.dialect = abstractSqlQueryDialect;
     }
 
-    @Override
+        @Override
     protected Table constructTable(Class<?> entityClass, EntityDictionary metaDataDictionary) {
         return new SQLTable(entityClass, metaDataDictionary);
     }
@@ -128,7 +116,7 @@ public class SQLQueryEngine extends QueryEngine {
             }
 
             // Translate the query into SQL.
-            SQLQuery sql = toSQL(query);
+            SQLQuery sql = toSQL(query, this.dialect);
             log.debug("SQL Query: " + sql);
 
             javax.persistence.Query jpaQuery = entityManager.createNativeQuery(sql.toString());
@@ -140,7 +128,7 @@ public class SQLQueryEngine extends QueryEngine {
 
                 if (pagination.returnPageTotals()) {
 
-                    SQLQuery paginationSQL = toPageTotalSQL(sql);
+                    SQLQuery paginationSQL = toPageTotalSQL(sql, this.dialect);
                     javax.persistence.Query pageTotalQuery =
                             entityManager.createNativeQuery(paginationSQL.toString())
                                     .setHint(QueryHints.HINT_READONLY, true);
@@ -181,7 +169,7 @@ public class SQLQueryEngine extends QueryEngine {
     public List<String> showQueries(Query query) {
         List<String> queries;
         queries = new ArrayList<String>();
-        SQLQuery sql = toSQL(query);
+        SQLQuery sql = toSQL(query, this.dialect);
         EntityManager entityManager = null;
         entityManager = entityManagerFactory.createEntityManager();
         javax.persistence.Query jpaQuery = entityManager.createNativeQuery(sql.toString());
@@ -189,7 +177,7 @@ public class SQLQueryEngine extends QueryEngine {
         Pagination pagination = query.getPagination();
         if (pagination != null) {
             if (pagination.returnPageTotals()) {
-                SQLQuery paginationSQL = toPageTotalSQL(sql);
+                SQLQuery paginationSQL = toPageTotalSQL(sql, this.dialect);
                 queries.add(paginationSQL.toString());
             }
         }
@@ -204,7 +192,7 @@ public class SQLQueryEngine extends QueryEngine {
          * @param query the client query.
          * @return the SQL query.
          */
-    private SQLQuery toSQL(Query query) {
+    private SQLQuery toSQL(Query query, AbstractSqlQueryDialect abstractSqlQueryDialect) {
         Set<ColumnProjection> groupByDimensions = new LinkedHashSet<>(query.getGroupByDimensions());
         Set<TimeDimensionProjection> timeDimensions = new LinkedHashSet<>(query.getTimeDimensions());
 
@@ -220,7 +208,7 @@ public class SQLQueryEngine extends QueryEngine {
                 .reduce(SQLQueryTemplate::merge)
                 .orElse(new SQLQueryTemplate(query));
 
-        return new SQLQueryConstructor(referenceTable).resolveTemplate(
+        return new SQLQueryConstructor(referenceTable, abstractSqlQueryDialect).resolveTemplate(
                 query,
                 queryTemplate,
                 query.getSorting(),
@@ -264,7 +252,7 @@ public class SQLQueryEngine extends QueryEngine {
      * @param sql The original query
      * @return A new query that returns the total number of records.
      */
-    private SQLQuery toPageTotalSQL(SQLQuery sql) {
+    private SQLQuery toPageTotalSQL(SQLQuery sql, AbstractSqlQueryDialect abstractSqlQueryDialect) {
         // TODO: refactor this method
         String groupByDimensions =
                 extractSQLDimensions(sql.getClientQuery(), sql.getClientQuery().getTable())
