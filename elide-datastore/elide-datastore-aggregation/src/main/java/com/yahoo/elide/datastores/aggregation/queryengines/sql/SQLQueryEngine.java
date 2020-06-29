@@ -14,7 +14,7 @@ import com.yahoo.elide.datastores.aggregation.QueryEngine;
 import com.yahoo.elide.datastores.aggregation.metadata.MetaDataStore;
 import com.yahoo.elide.datastores.aggregation.metadata.models.*;
 import com.yahoo.elide.datastores.aggregation.query.*;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.AbstractSqlQueryDialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLQueryDialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.impl.DefaultDialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLMetric;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLReferenceTable;
@@ -43,17 +43,17 @@ public class SQLQueryEngine extends QueryEngine {
     private final EntityManagerFactory entityManagerFactory;
 
     private final SQLReferenceTable referenceTable;
-    private final AbstractSqlQueryDialect dialect;
+    private final SQLQueryDialect dialect;
 
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache) {
         this(metaDataStore,entityManagerFactory,cache, new DefaultDialect());
     }
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache,
-                          AbstractSqlQueryDialect abstractSqlQueryDialect) {
+                          SQLQueryDialect sqlQueryDialect) {
         super(metaDataStore, cache);
         this.entityManagerFactory = entityManagerFactory;
         this.referenceTable = new SQLReferenceTable(metaDataStore);
-        this.dialect = abstractSqlQueryDialect;
+        this.dialect = sqlQueryDialect;
     }
 
         @Override
@@ -192,7 +192,7 @@ public class SQLQueryEngine extends QueryEngine {
          * @param query the client query.
          * @return the SQL query.
          */
-    private SQLQuery toSQL(Query query, AbstractSqlQueryDialect abstractSqlQueryDialect) {
+    private SQLQuery toSQL(Query query, SQLQueryDialect sqlQueryDialect) {
         Set<ColumnProjection> groupByDimensions = new LinkedHashSet<>(query.getGroupByDimensions());
         Set<TimeDimensionProjection> timeDimensions = new LinkedHashSet<>(query.getTimeDimensions());
 
@@ -208,7 +208,7 @@ public class SQLQueryEngine extends QueryEngine {
                 .reduce(SQLQueryTemplate::merge)
                 .orElse(new SQLQueryTemplate(query));
 
-        return new SQLQueryConstructor(referenceTable, abstractSqlQueryDialect).resolveTemplate(
+        return new SQLQueryConstructor(referenceTable, sqlQueryDialect).resolveTemplate(
                 query,
                 queryTemplate,
                 query.getSorting(),
@@ -252,7 +252,7 @@ public class SQLQueryEngine extends QueryEngine {
      * @param sql The original query
      * @return A new query that returns the total number of records.
      */
-    private SQLQuery toPageTotalSQL(SQLQuery sql, AbstractSqlQueryDialect abstractSqlQueryDialect) {
+    private SQLQuery toPageTotalSQL(SQLQuery sql, SQLQueryDialect sqlQueryDialect) {
         // TODO: refactor this method
         String groupByDimensions =
                 extractSQLDimensions(sql.getClientQuery(), sql.getClientQuery().getTable())
