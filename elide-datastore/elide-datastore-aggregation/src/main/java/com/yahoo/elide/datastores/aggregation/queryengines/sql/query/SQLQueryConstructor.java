@@ -61,7 +61,7 @@ public class SQLQueryConstructor {
 
     /**
      * Construct sql query with a template and sorting, where and having clause.
-     *
+     * Utlilizes the dialect field accordingly
      * @param clientQuery original query object
      * @param template query template constructed from client query
      * @param sorting sorting clause

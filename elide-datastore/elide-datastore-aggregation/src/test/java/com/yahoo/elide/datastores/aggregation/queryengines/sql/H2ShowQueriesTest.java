@@ -28,7 +28,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ShowQueriesTest extends SQLUnitTest{
+public class H2ShowQueriesTest extends SQLUnitTest{
     private static Table playerStatsViewTable;
 
     @BeforeAll
@@ -45,6 +45,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                 .build();
         String expectedQueryStr = "SELECT DISTINCT  " +
                 "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats";
+
         compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
@@ -165,6 +166,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                         + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "HAVING MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder();
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
@@ -183,6 +185,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                 "SELECT DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating "
                         + "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats "
                         + "HAVING com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL";
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
@@ -211,6 +214,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                         + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "AND MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder() + ")";
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
@@ -239,6 +243,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                         + "HAVING (com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating IS NOT NULL "
                         + "OR MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) > "
                         + params.get(0).getPlaceholder() + ")";
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryStr, engine.showQueries(query));
     }
 
@@ -401,6 +406,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                         "overallRating FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats      " +
                         "ORDER BY MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) DESC";
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
 
@@ -417,12 +423,15 @@ public class ShowQueriesTest extends SQLUnitTest{
                 .build();
 
         String expectedQueryStr =
+                //TODO This doesn't work in hive - Group by /order by / min
+                // https://stackoverflow.com/questions/23429710/hive-semanticexception-error-10002-line-321-invalid-column-reference-name
                 "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) " +
                         "AS highScore,com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS " +
                         "overallRating FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
                         "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating " +
                         "ORDER BY MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) DESC";
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(query));
 
     }
@@ -448,6 +457,7 @@ public class ShowQueriesTest extends SQLUnitTest{
                         "WHERE stats.overallRating = 'Great') AS " +
                         "com_yahoo_elide_datastores_aggregation_example_PlayerStatsView";
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
+        System.out.println(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
 

@@ -125,6 +125,11 @@ public class PlayerStats {
         return highScore;
     }
 
+    @Meta(description = "very test-like score")
+    public long getTestScore() {
+        return highScore;
+    }
+
     public void setHighScore(final long highScore) {
         this.highScore = highScore;
     }

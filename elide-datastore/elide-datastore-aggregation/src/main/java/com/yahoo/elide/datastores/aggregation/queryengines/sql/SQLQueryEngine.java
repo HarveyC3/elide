@@ -23,7 +23,7 @@ import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.Query;
 import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLQueryDialect;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.impl.DefaultDialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.impl.H2Dialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLMetric;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLReferenceTable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLTable;
@@ -49,7 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 import static com.yahoo.elide.utils.TypeHelper.getTypeAlias;
 
@@ -64,7 +64,7 @@ public class SQLQueryEngine extends QueryEngine {
     private final SQLQueryDialect dialect;
 
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache) {
-        this(metaDataStore,entityManagerFactory,cache, new DefaultDialect());
+        this(metaDataStore,entityManagerFactory,cache, new H2Dialect()); //TODO dialect factory/default?
     }
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache,
                           SQLQueryDialect sqlQueryDialect) {
@@ -232,6 +232,7 @@ public class SQLQueryEngine extends QueryEngine {
                 query.getSorting(),
                 query.getWhereFilter(),
                 query.getHavingFilter());
+
     }
 
 
