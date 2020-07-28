@@ -22,8 +22,8 @@ import com.yahoo.elide.datastores.aggregation.query.ColumnProjection;
 import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.Query;
 import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLQueryDialect;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.impl.H2Dialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialectFactory;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLMetric;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLReferenceTable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLTable;
@@ -61,17 +61,18 @@ public class SQLQueryEngine extends QueryEngine {
     private final EntityManagerFactory entityManagerFactory;
 
     private final SQLReferenceTable referenceTable;
-    private final SQLQueryDialect dialect;
+
+    private final SQLDialect dialect;
 
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache) {
-        this(metaDataStore,entityManagerFactory,cache, new H2Dialect()); //TODO dialect factory/default?
+        this(metaDataStore,entityManagerFactory,cache, new SQLDialectFactory().getDefaultDialect());
     }
     public SQLQueryEngine(MetaDataStore metaDataStore, EntityManagerFactory entityManagerFactory, Cache cache,
-                          SQLQueryDialect sqlQueryDialect) {
+                          SQLDialect sqlDialect) {
         super(metaDataStore, cache);
         this.entityManagerFactory = entityManagerFactory;
         this.referenceTable = new SQLReferenceTable(metaDataStore);
-        this.dialect = sqlQueryDialect;
+        this.dialect = sqlDialect;
     }
 
         @Override
@@ -210,7 +211,7 @@ public class SQLQueryEngine extends QueryEngine {
          * @param query the client query.
          * @return the SQL query.
          */
-    private SQLQuery toSQL(Query query, SQLQueryDialect sqlQueryDialect) {
+    private SQLQuery toSQL(Query query, SQLDialect sqlDialect) {
         Set<ColumnProjection> groupByDimensions = new LinkedHashSet<>(query.getGroupByDimensions());
         Set<TimeDimensionProjection> timeDimensions = new LinkedHashSet<>(query.getTimeDimensions());
 
@@ -226,7 +227,7 @@ public class SQLQueryEngine extends QueryEngine {
                 .reduce(SQLQueryTemplate::merge)
                 .orElse(new SQLQueryTemplate(query));
 
-        return new SQLQueryConstructor(referenceTable, sqlQueryDialect).resolveTemplate(
+        return new SQLQueryConstructor(referenceTable, sqlDialect).resolveTemplate(
                 query,
                 queryTemplate,
                 query.getSorting(),
@@ -271,7 +272,7 @@ public class SQLQueryEngine extends QueryEngine {
      * @param sql The original query
      * @return A new query that returns the total number of records.
      */
-    private SQLQuery toPageTotalSQL(SQLQuery sql, SQLQueryDialect sqlQueryDialect) {
+    private SQLQuery toPageTotalSQL(SQLQuery sql, SQLDialect sqlDialect) {
         // TODO: refactor this method
         String groupByDimensions =
                 extractSQLDimensions(sql.getClientQuery(), sql.getClientQuery().getTable())
@@ -281,7 +282,8 @@ public class SQLQueryEngine extends QueryEngine {
                                 dimension.getName()))
                         .collect(Collectors.joining(", "));
 
-        String projectionClause = String.format("COUNT(DISTINCT(%s))", groupByDimensions);
+        String projectionClause = sqlDialect.generateCountDistinctClause(groupByDimensions);
+        //String.format("COUNT(DISTINCT(%s))", groupByDimensions);
 
         return SQLQuery.builder()
                 .clientQuery(sql.getClientQuery())

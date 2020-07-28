@@ -27,13 +27,21 @@ import com.yahoo.elide.datastores.aggregation.query.ColumnProjection;
 import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.SQLQueryEngine;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialectFactory;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialect;
 import com.yahoo.elide.request.Argument;
 import com.yahoo.elide.utils.ClassScanner;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.regex.Pattern;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class SQLUnitTest {
     protected static EntityManagerFactory emf;
@@ -49,7 +57,7 @@ public abstract class SQLUnitTest {
 
     protected static QueryEngine engine;
 
-    public static void init() {
+    public static void init(SQLDialect sqlDialect) {
         metaDataStore = new MetaDataStore(ClassScanner.getAllClasses("com.yahoo.elide.datastores.aggregation.example"));
 
         emf = Persistence.createEntityManagerFactory("aggregationStore");
@@ -67,7 +75,7 @@ public abstract class SQLUnitTest {
 
         metaDataStore.populateEntityDictionary(dictionary);
 
-        engine = new SQLQueryEngine(metaDataStore, emf, null);
+        engine = new SQLQueryEngine(metaDataStore, emf, null, sqlDialect);
         playerStatsTable = engine.getTable("playerStats");
 
         ASIA.setName("Asia");
@@ -87,6 +95,10 @@ public abstract class SQLUnitTest {
         USA.setContinent(NA);
     }
 
+    public static void init(){
+        init(new SQLDialectFactory().getDefaultDialect());
+    }
+
     public static ColumnProjection toProjection(Dimension dimension) {
         return engine.constructDimensionProjection(dimension, dimension.getName(), Collections.emptyMap());
     }
@@ -101,4 +113,42 @@ public abstract class SQLUnitTest {
     public static MetricProjection invoke(Metric metric) {
         return engine.constructMetricProjection(metric, metric.getName(), Collections.emptyMap());
     }
+
+    /**
+     * All functions below are helpers to simplify SQL showQuery tests.
+     */
+    /**
+     * Automatically convert a single expected string into a List with one element
+     * @param expected
+     * @param actual
+     */
+    protected void compareQueryLists(String expected, List<String> actual) {
+        compareQueryLists(Arrays.asList(expected), actual);
+    }
+
+    /**
+     * Helper for comparing lists of queries.
+     */
+    protected void compareQueryLists(List<String> expected, List<String> actual) {
+        if (expected == null && actual == null) {
+            return;
+        } else if (expected == null) {
+            fail("Expected a null query List, but actual was non-null");
+        } else if (actual == null) {
+            fail("Expected a non-null query List, but actual was null");
+        }
+        assertEquals(expected.size(), actual.size(), "Query List sizes do not match");
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(combineWhitespace(expected.get(i).trim()), combineWhitespace(actual.get(i).trim()));
+        }
+    }
+
+    /**
+     * Helper to remove repeated whitespace chars before comparing queries
+     */
+    protected Pattern repeatedWhitespacePattern = Pattern.compile("\\s\\s*");
+    protected String combineWhitespace(String input) {
+        return repeatedWhitespacePattern.matcher(input).replaceAll(" ");
+    }
+
 }
