@@ -27,7 +27,7 @@ import com.yahoo.elide.datastores.aggregation.metadata.models.TimeDimension;
 import com.yahoo.elide.datastores.aggregation.query.Query;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.annotation.FromSubquery;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.annotation.FromTable;
-import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLQueryDialect;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metadata.SQLReferenceTable;
 import com.yahoo.elide.request.Argument;
 import com.yahoo.elide.request.Sorting;
@@ -51,12 +51,12 @@ import java.util.stream.Stream;
 public class SQLQueryConstructor {
     private final SQLReferenceTable referenceTable;
     private final EntityDictionary dictionary;
-    private final SQLDialect dialect;
+    private final SQLQueryDialect dialect;
 
-    public SQLQueryConstructor(SQLReferenceTable referenceTable, SQLDialect sqlDialect) {
+    public SQLQueryConstructor(SQLReferenceTable referenceTable, SQLQueryDialect sqlQueryDialect) {
         this.referenceTable = referenceTable;
         this.dictionary = referenceTable.getDictionary();
-        this.dialect = sqlDialect;
+        this.dialect = sqlQueryDialect;
     }
 
     /**

@@ -35,10 +35,6 @@ public class Query {
     @Singular
     Set<ColumnProjection> groupByDimensions;
 
-//    Suggested code addition for GROUP BY metrics (Hive dialect at a min)
-//    @Singular
-//    Set<ColumnProjection> groupByMetrics;
-
     @Singular
     Set<TimeDimensionProjection> timeDimensions;
 
@@ -56,5 +52,4 @@ public class Query {
         return Stream.concat(getGroupByDimensions().stream(), getTimeDimensions().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
-
 }

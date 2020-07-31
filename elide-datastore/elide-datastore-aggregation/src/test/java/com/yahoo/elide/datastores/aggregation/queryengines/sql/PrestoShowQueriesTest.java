@@ -1,5 +1,6 @@
 package com.yahoo.elide.datastores.aggregation.queryengines.sql;
 
+<<<<<<< HEAD
 import com.google.common.collect.Lists;
 import com.yahoo.elide.core.Path;
 import com.yahoo.elide.core.filter.FilterPredicate;
@@ -143,4 +144,7 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
         compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
 
+=======
+public class PrestoShowQueriesTest {
+>>>>>>> parent of 24dd8a57... add dialects and tests for expected functionality
 }
