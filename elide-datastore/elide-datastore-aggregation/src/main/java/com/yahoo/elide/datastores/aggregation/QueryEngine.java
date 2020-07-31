@@ -19,6 +19,7 @@ import com.yahoo.elide.datastores.aggregation.query.ColumnProjection;
 import com.yahoo.elide.datastores.aggregation.query.MetricProjection;
 import com.yahoo.elide.datastores.aggregation.query.Query;
 import com.yahoo.elide.datastores.aggregation.query.TimeDimensionProjection;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialect;
 import com.yahoo.elide.request.Argument;
 
 import com.google.common.base.Functions;
@@ -178,6 +179,8 @@ public abstract class QueryEngine {
      * @return query string
      */
     public abstract List<String> showQueries(Query query);
+
+    public abstract List<String> showQueries(Query query, SQLDialect sqlDialect);
 
     /**
      * Returns the schema for a given entity class.

@@ -96,7 +96,7 @@ public abstract class SQLUnitTest {
     }
 
     public static void init(){
-        init(new SQLDialectFactory().getDefaultDialect());
+        init(SQLDialectFactory.getDefaultDialect());
     }
 
     public static ColumnProjection toProjection(Dimension dimension) {

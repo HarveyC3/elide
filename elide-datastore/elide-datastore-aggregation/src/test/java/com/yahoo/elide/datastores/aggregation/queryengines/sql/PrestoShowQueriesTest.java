@@ -25,12 +25,14 @@ import java.util.*;
  * This class only covers known differences/ use cases and will continue to grow as relavent differences are discovered.
  *
  * *** KEY ASSUMPTIONS ***
+ *
  *      * `from_unixtime(unix_timestamp())` shall be used instead of `parse_datetime(format_datetime())`
  *           when defining a datastore a real Hive environment.
  *        - PlayerStats.DAY_FORMAT provides an example of where this logic would have to be updated
  *        - com/yahoo/elide/datastores/aggregation/example/PlayerStats.java
  *
- *      * UDAFs (User-defined Aggregation Functions) such as MIN and MAX will be supported in the Hive environment
+ *      * Function calls in the Presto datastore are valid
+ *
  *      * WHERE clause cannot contain aggregations, window functions or grouping operations in Presto
  * *** * * * * * * * * ***
  *
@@ -41,7 +43,7 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
 
     @BeforeAll
     public static void init() {
-        SQLUnitTest.init(new SQLDialectFactory().getPrestoDialect());
+        SQLUnitTest.init(SQLDialectFactory.getPrestoDialect());
 
         playerStatsViewTable = engine.getTable("playerStatsView");
     }

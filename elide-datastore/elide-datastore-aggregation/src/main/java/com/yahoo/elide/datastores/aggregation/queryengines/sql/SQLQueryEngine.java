@@ -184,11 +184,18 @@ public class SQLQueryEngine extends QueryEngine {
         }
     }
 
+
+    /**
+     * Generate the query string with the indicated SQLDialect.
+     * @param query
+     * @param sqlDialect
+     * @return
+     */
     @Override
-    public List<String> showQueries(Query query) {
+    public List<String> showQueries(Query query, SQLDialect sqlDialect) {
         List<String> queries;
         queries = new ArrayList<String>();
-        SQLQuery sql = toSQL(query, this.dialect);
+        SQLQuery sql = toSQL(query, sqlDialect);
         EntityManager entityManager = null;
         entityManager = entityManagerFactory.createEntityManager();
         javax.persistence.Query jpaQuery = entityManager.createNativeQuery(sql.toString());
@@ -196,7 +203,7 @@ public class SQLQueryEngine extends QueryEngine {
         Pagination pagination = query.getPagination();
         if (pagination != null) {
             if (pagination.returnPageTotals()) {
-                SQLQuery paginationSQL = toPageTotalSQL(sql, this.dialect);
+                SQLQuery paginationSQL = toPageTotalSQL(sql, sqlDialect);
                 queries.add(paginationSQL.toString());
             }
         }
@@ -205,12 +212,22 @@ public class SQLQueryEngine extends QueryEngine {
         return queries;
     }
 
-        /**
-         * Translates the client query into SQL.
-         *
-         * @param query the client query.
-         * @return the SQL query.
-         */
+    /**
+     * Generate the query string using the engine's current dialect.
+     * @param query    The query customized for a particular persistent storage or storage client
+     * @return
+     */
+    @Override
+    public List<String> showQueries(Query query) {
+        return this.showQueries(query, this.dialect);
+    }
+
+    /**
+     * Translates the client query into SQL.
+     *
+     * @param query the client query.
+     * @return the SQL query.
+     */
     private SQLQuery toSQL(Query query, SQLDialect sqlDialect) {
         Set<ColumnProjection> groupByDimensions = new LinkedHashSet<>(query.getGroupByDimensions());
         Set<TimeDimensionProjection> timeDimensions = new LinkedHashSet<>(query.getTimeDimensions());

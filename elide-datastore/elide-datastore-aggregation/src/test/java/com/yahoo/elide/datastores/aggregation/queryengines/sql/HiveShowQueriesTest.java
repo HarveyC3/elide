@@ -43,7 +43,7 @@ public class HiveShowQueriesTest extends SQLUnitTest{
 
     @BeforeAll
     public static void init() {
-        SQLUnitTest.init(new SQLDialectFactory().getHiveDialect());
+        SQLUnitTest.init(SQLDialectFactory.getHiveDialect());
 
         playerStatsViewTable = engine.getTable("playerStatsView");
     }

@@ -14,6 +14,8 @@ import com.yahoo.elide.datastores.aggregation.framework.SQLUnitTest;
 import com.yahoo.elide.datastores.aggregation.metadata.enums.TimeGrain;
 import com.yahoo.elide.datastores.aggregation.metadata.models.Table;
 import com.yahoo.elide.datastores.aggregation.query.Query;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialect;
+import com.yahoo.elide.datastores.aggregation.queryengines.sql.dialects.SQLDialectFactory;
 import com.yahoo.elide.request.Sorting;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -22,18 +24,32 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * This class is intended to test the showQueries function with the default dialect.
  * Since the default dialect is H2, it is redundant to have a H2ShowQueriesTest class.
  */
-public class ShowQueriesTest extends SQLUnitTest{
+public class DialectShowQueriesTest extends SQLUnitTest{
     private static Table playerStatsViewTable;
+    private static Map<String, SQLDialect> dialects;
 
     @BeforeAll
     public static void init() {
         SQLUnitTest.init();
 
         playerStatsViewTable = engine.getTable("playerStatsView");
+        dialects = SQLDialectFactory.getAllDialects();
+
+    }
+
+    /**
+     * Make sure that we have the same expected number of dialects found in the getAllDialects() method.
+     */
+    @Test
+    public void testGetAllDialects(){
+        assertEquals(3, dialects.size());
+
     }
 //    TODO - Should this generate an error from the engine level?
 //    @Test
