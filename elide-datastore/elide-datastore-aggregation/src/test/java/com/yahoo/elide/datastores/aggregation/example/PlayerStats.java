@@ -6,16 +6,7 @@
 package com.yahoo.elide.datastores.aggregation.example;
 
 import com.yahoo.elide.annotation.Include;
-import com.yahoo.elide.datastores.aggregation.annotation.Cardinality;
-import com.yahoo.elide.datastores.aggregation.annotation.CardinalitySize;
-import com.yahoo.elide.datastores.aggregation.annotation.DimensionFormula;
-import com.yahoo.elide.datastores.aggregation.annotation.FriendlyName;
-import com.yahoo.elide.datastores.aggregation.annotation.Join;
-import com.yahoo.elide.datastores.aggregation.annotation.JoinTo;
-import com.yahoo.elide.datastores.aggregation.annotation.Meta;
-import com.yahoo.elide.datastores.aggregation.annotation.MetricAggregation;
-import com.yahoo.elide.datastores.aggregation.annotation.Temporal;
-import com.yahoo.elide.datastores.aggregation.annotation.TimeGrainDefinition;
+import com.yahoo.elide.datastores.aggregation.annotation.*;
 import com.yahoo.elide.datastores.aggregation.metadata.enums.TimeGrain;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.annotation.FromTable;
 import com.yahoo.elide.datastores.aggregation.queryengines.sql.metric.functions.SqlMax;
@@ -125,13 +116,14 @@ public class PlayerStats {
         return highScore;
     }
 
-    @Meta(description = "very test-like score")
-    public long getTestScore() {
-        return highScore;
-    }
-
     public void setHighScore(final long highScore) {
         this.highScore = highScore;
+    }
+
+    @MetricFormula(value = "highScore")
+    @Meta(description = "highScore with no aggregation")
+    public long getHighScoreNoAgg() {
+        return highScore;
     }
 
     @MetricAggregation(function = SqlMin.class)
