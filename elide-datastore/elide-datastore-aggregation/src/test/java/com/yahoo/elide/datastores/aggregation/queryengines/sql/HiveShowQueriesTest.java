@@ -203,6 +203,8 @@ public class HiveShowQueriesTest extends SQLUnitTest{
      * 1) dims can only be added in aggregations, which means metrics must be aggregated
      * 2) metrics aggregations are expanded in ORDER BY.
      * Using aliases in ORDER BY will fix this.
+     *
+     */
     @Test
     public void testShowQuerySortingByMetricAndDimension(){
         String expectedQueryStr =
@@ -214,7 +216,7 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.SORT_METRIC_AND_DIM_DESC)));
     }
-    */
+
 
     @Test
     public void testShowQuerySelectFromSubquery() {
