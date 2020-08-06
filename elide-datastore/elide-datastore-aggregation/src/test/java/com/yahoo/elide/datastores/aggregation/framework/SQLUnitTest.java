@@ -70,6 +70,7 @@ public abstract class SQLUnitTest {
         WHERE_DIMS_ONLY,
         WHERE_METRICS_AND_DIMS,
         WHERE_METRICS_OR_DIMS,
+        WHERE_METRICS_AGG,
         HAVING_METRICS_ONLY,
         HAVING_DIMS_ONLY,
         HAVING_METRICS_AND_DIMS,
@@ -244,6 +245,19 @@ public abstract class SQLUnitTest {
                     .whereFilter(new OrFilterExpression(ratingFilter, highScoreFilter))
                     .build();
             testQueries.put(TestQueryName.WHERE_METRICS_OR_DIMS, whereMetricsOrDimsQuery);
+        }
+        {
+            FilterPredicate predicate = new FilterPredicate(
+                    new Path(PlayerStats.class, dictionary, "highScore"),
+                    Operator.GT,
+                    Lists.newArrayList(9000));
+            Query whereMetricsAggQuery = Query.builder()
+                    .table(playerStatsTable)
+                    .metric(invoke(playerStatsTable.getMetric("highScore")))
+                    .metric(invoke(playerStatsTable.getMetric("lowScore")))
+                    .whereFilter(predicate)
+                    .build();
+            testQueries.put(TestQueryName.WHERE_METRICS_AGG, whereMetricsAggQuery);
         }
         {
             FilterPredicate predicate = new FilterPredicate(
