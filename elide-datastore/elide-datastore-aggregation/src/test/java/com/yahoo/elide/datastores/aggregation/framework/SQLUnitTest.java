@@ -70,7 +70,7 @@ public abstract class SQLUnitTest {
         WHERE_DIMS_ONLY,
         WHERE_METRICS_AND_DIMS,
         WHERE_METRICS_OR_DIMS,
-        WHERE_METRICS_AGG,
+        WHERE_METRICS_AGGREGATION,
         HAVING_METRICS_ONLY,
         HAVING_DIMS_ONLY,
         HAVING_METRICS_AND_DIMS,
@@ -82,8 +82,7 @@ public abstract class SQLUnitTest {
         SORT_DIM_DESC,
         SORT_METRIC_AND_DIM_DESC,
         SUBQUERY,
-        GROUP_BY_METRIC_NOT_IN_SELECT,
-        UDF_IN_GROUP_BY,
+        GROUP_BY_DIMENSION_NOT_IN_SELECT,
         COMPLICATED
     }
     protected static Map<TestQueryName, Query> testQueries;
@@ -257,7 +256,7 @@ public abstract class SQLUnitTest {
                     .metric(invoke(playerStatsTable.getMetric("lowScore")))
                     .whereFilter(predicate)
                     .build();
-            testQueries.put(TestQueryName.WHERE_METRICS_AGG, whereMetricsAggQuery);
+            testQueries.put(TestQueryName.WHERE_METRICS_AGGREGATION, whereMetricsAggQuery);
         }
         {
             FilterPredicate predicate = new FilterPredicate(
@@ -335,6 +334,25 @@ public abstract class SQLUnitTest {
             testQueries.put(TestQueryName.PAGINATION_TOTAL, paginationQuery);
         }
         {
+            PaginationImpl pagination = new PaginationImpl(
+                    PlayerStats.class,
+                    123123,
+                    1,
+                    PaginationImpl.DEFAULT_PAGE_LIMIT,
+                    PaginationImpl.MAX_PAGE_LIMIT,
+                    true,
+                    true
+            );
+            Query paginationQuery = Query.builder()
+                    .table(playerStatsTable)
+                    .metric(invoke(playerStatsTable.getMetric("lowScore")))
+                    .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                    .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+                    .pagination(pagination)
+                    .build();
+            testQueries.put(TestQueryName.PAGINATION_PAGE_AND_TOTAL, paginationQuery);
+        }
+        {
             Map<String, Sorting.SortOrder> sortMap = new TreeMap<>();
             sortMap.put("highScoreNoAgg", Sorting.SortOrder.asc);
             Query sortMetricAscQuery = Query.builder()
@@ -383,6 +401,52 @@ public abstract class SQLUnitTest {
                     .metric(invoke(playerStatsViewTable.getMetric("highScore")))
                     .build();
             testQueries.put(TestQueryName.SUBQUERY, selectFromSubquery);
+        }
+        {
+            Query groupByNoSelectQuery = Query.builder()
+                    .table(playerStatsTable)
+                    .metric(invoke(playerStatsTable.getMetric("highScore")))
+                    .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                    .build();
+            testQueries.put(TestQueryName.GROUP_BY_DIMENSION_NOT_IN_SELECT, groupByNoSelectQuery);
+        }
+        {
+            // Sorting
+            Map<String, Sorting.SortOrder> sortMap = new TreeMap<>();
+            sortMap.put("highScoreNoAgg", Sorting.SortOrder.desc);
+
+            // JOIN / subquery
+            Table playerStatsViewTable = engine.getTable("playerStatsView");
+
+            // WHERE / HAVING
+            FilterPredicate predicate = new FilterPredicate(
+                    new Path(PlayerStats.class, dictionary, "highScoreNoAgg"),
+                    Operator.GT,
+                    Lists.newArrayList(9000));
+            // Pagination totals and page
+            PaginationImpl pagination = new PaginationImpl(
+                    PlayerStats.class,
+                    0,
+                    1,
+                    PaginationImpl.DEFAULT_PAGE_LIMIT,
+                    PaginationImpl.MAX_PAGE_LIMIT,
+                    true,
+                    false
+            );
+
+            //GROUP BY in query
+            Query paginationQuery = Query.builder()
+                    .table(playerStatsTable)
+                    .metric(invoke(playerStatsViewTable.getMetric("highScore")))
+                    .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                    .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+                    .pagination(pagination)
+                    .sorting(new SortingImpl(sortMap, PlayerStats.class, dictionary))
+                    .whereFilter(predicate)
+                    .havingFilter(predicate)
+                    .build();
+            testQueries.put(TestQueryName.COMPLICATED, paginationQuery);
+
         }
     }
 
