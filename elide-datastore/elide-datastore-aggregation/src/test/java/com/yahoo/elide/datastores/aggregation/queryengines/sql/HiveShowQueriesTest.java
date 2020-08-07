@@ -173,12 +173,12 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.PAGINATION_TOTAL)));
     }
 
-    /* TODO
+
     @Test
     public void testShowQueriesPaginationWithPageAndTotal() {
         String expectedQueryStr1 =
-                "SELECT COUNT(DISTINCT(com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
-                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate)) FROM " +
+                "SELECT COUNT(DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate) FROM " +
                         "playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats";
         String expectedQueryStr2 =
                 "SELECT MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) AS " +
@@ -195,7 +195,7 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         expectedQueryList.add(expectedQueryStr1);
         expectedQueryList.add(expectedQueryStr2);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.PAGINATION_PAGE_AND_TOTAL)));
-    }*/
+    }
 
     @Test
     public void testShowQuerySortingAscending(){
@@ -221,10 +221,9 @@ public class HiveShowQueriesTest extends SQLUnitTest{
     public void testShowQuerySortingByDimensionDesc(){
         String expectedQueryStr =
                 "SELECT DISTINCT " +
-                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating, " +
-                        "MIN(com_yahoo_elide_datastores_aggregation_example_PlayerStats.lowScore) as lowScore " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating " +
                         "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
-                        "ORDER BY lowScore DESC";
+                        "ORDER BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating DESC";
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.SORT_DIM_DESC)));
     }
@@ -268,7 +267,7 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.SUBQUERY)));
     }
-    /* TODO
+
     @Test
     public void testShowQueryGroupByNotInSelect() {
         String expectedQueryStr =
@@ -279,9 +278,9 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.GROUP_BY_DIMENSION_NOT_IN_SELECT)));
     }
-    */
 
-    /* TODO
+
+
     @Test
     public void testShowQueryComplicated() {
         Query query = testQueries.get(TestQueryName.COMPLICATED);
@@ -289,8 +288,8 @@ public class HiveShowQueriesTest extends SQLUnitTest{
         List<FilterPredicate.FilterParameter> params = ((FilterPredicate)filterPredicate).getParameters();
 
         String expectedQueryStr1 =
-                "SELECT COUNT(DISTINCT(com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
-                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate)) " +
+                "SELECT COUNT(DISTINCT com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate) " +
                         "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
                         "WHERE highScore > " + params.get(0).getPlaceholder();
         String expectedQueryStr2 =
@@ -312,6 +311,6 @@ public class HiveShowQueriesTest extends SQLUnitTest{
 
         compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
-    */
+
 
 }

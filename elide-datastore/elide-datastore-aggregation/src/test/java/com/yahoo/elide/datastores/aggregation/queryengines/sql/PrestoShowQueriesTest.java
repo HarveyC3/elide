@@ -27,7 +27,7 @@ import java.util.*;
  * This class only covers known differences/ use cases and will continue to grow as relavent differences are discovered.
  *
  * *** KEY ASSUMPTIONS ***
- *      * `from_unixtime(unix_timestamp())` shall be used instead of `parse_datetime(format_datetime())`
+ *      * `parse_datetime(format_datetime())` shall be used instead of `parse_datetime(format_datetime())`
  *           when defining a datastore a real Presto environment.
  *        - PlayerStats.DAY_FORMAT provides an example of where this logic would have to be updated
  *        - com/yahoo/elide/datastores/aggregation/example/PlayerStats.java
@@ -202,6 +202,8 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
     }
 
     /* TODO
+    *
+    */
  @Test
  public void testShowQueriesPaginationWithPageAndTotal() {
      String expectedQueryStr1 =
@@ -223,7 +225,7 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
      expectedQueryList.add(expectedQueryStr1);
      expectedQueryList.add(expectedQueryStr2);
      compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.PAGINATION_PAGE_AND_TOTAL)));
- }*/
+ }
 
     @Test
     public void testShowQuerySortingAscending(){
@@ -286,7 +288,7 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.SUBQUERY)));
     }
 
-        /* TODO
+
     @Test
     public void testShowQueryGroupByNotInSelect() {
         String expectedQueryStr =
@@ -297,9 +299,9 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
         List<String> expectedQueryList = Arrays.asList(expectedQueryStr);
         compareQueryLists(expectedQueryList, engine.showQueries(testQueries.get(TestQueryName.GROUP_BY_DIMENSION_NOT_IN_SELECT)));
     }
-    */
 
-    /* TODO
+
+
     @Test
     public void testShowQueryComplicated() {
         Query query = testQueries.get(TestQueryName.COMPLICATED);
@@ -330,5 +332,5 @@ public class PrestoShowQueriesTest extends SQLUnitTest{
 
         compareQueryLists(expectedQueryList, engine.showQueries(query));
     }
-    */
+
 }
