@@ -269,27 +269,36 @@ public class H2ShowQueriesTest extends SQLUnitTest {
     @Test
     public void testShowQueryComplicated() {
         Query query = testQueries.get(TestQueryName.COMPLICATED);
-        FilterPredicate filterPredicate = ((FilterPredicate)query.getWhereFilter());
-        List<FilterPredicate.FilterParameter> params = ((FilterPredicate)filterPredicate).getParameters();
+        List<FilterPredicate.FilterParameter> whereParams = ((FilterPredicate)query.getWhereFilter()).getParameters();
+        List<FilterPredicate.FilterParameter> havingParams = ((FilterPredicate)query.getHavingFilter()).getParameters();
 
         String expectedQueryStr1 =
                 "SELECT COUNT(DISTINCT(com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
                         "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate)) " +
                         "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
-                        "WHERE highScore > " + params.get(0).getPlaceholder();
+                        "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
+                        "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id " +
+                        "WHERE highScore > " + whereParams.get(0).getPlaceholder() + " " +
+                        "HAVING LOWER(com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.iso_code) " +
+                        "IN (LOWER(" + havingParams.get(0).getPlaceholder() + "))";
         String expectedQueryStr2 =
-                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStatsView.highScore) AS highScore," +
+                "SELECT MAX(com_yahoo_elide_datastores_aggregation_example_PlayerStats.highScore) AS highScore," +
                         "com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating AS overallRating," +
                         "PARSEDATETIME(FORMATDATETIME(" +
-                            "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, 'yyyy-MM-dd'), " +
-                            "'yyyy-MM-dd') AS recordedDate " +
-                        "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats" +
-                        " WHERE highScore > "  + params.get(0).getPlaceholder() +
-                        " GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
-                            "PARSEDATETIME(FORMATDATETIME(com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, " +
-                            "'yyyy-MM-dd'), 'yyyy-MM-dd') " +
-                        "HAVING highScore > "  + params.get(0).getPlaceholder() +
-                        " ORDER BY highScore DESC";
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, 'yyyy-MM-dd'), " +
+                        "'yyyy-MM-dd') AS recordedDate " +
+                        "FROM playerStats AS com_yahoo_elide_datastores_aggregation_example_PlayerStats " +
+                        "LEFT JOIN countries AS com_yahoo_elide_datastores_aggregation_example_PlayerStats_country " +
+                        "ON com_yahoo_elide_datastores_aggregation_example_PlayerStats.country_id = " +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.id " +
+                        "WHERE highScore > " + whereParams.get(0).getPlaceholder() + " " +
+                        "GROUP BY com_yahoo_elide_datastores_aggregation_example_PlayerStats.overallRating, " +
+                        "PARSEDATETIME(FORMATDATETIME(" +
+                        "com_yahoo_elide_datastores_aggregation_example_PlayerStats.recordedDate, 'yyyy-MM-dd'), 'yyyy-MM-dd') " +
+                        "HAVING LOWER(com_yahoo_elide_datastores_aggregation_example_PlayerStats_country.iso_code) " +
+                        "IN (LOWER(" + havingParams.get(0).getPlaceholder() + ")) " +
+                        "ORDER BY highScore DESC";
         List<String> expectedQueryList = new ArrayList<String>();
         expectedQueryList.add(expectedQueryStr1);
         expectedQueryList.add(expectedQueryStr2);

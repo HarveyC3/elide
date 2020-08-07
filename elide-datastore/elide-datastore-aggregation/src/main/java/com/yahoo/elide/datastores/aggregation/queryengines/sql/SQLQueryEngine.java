@@ -307,6 +307,7 @@ public class SQLQueryEngine extends QueryEngine {
                 .fromClause(sql.getFromClause())
                 .joinClause(sql.getJoinClause())
                 .whereClause(sql.getWhereClause())
+                .havingClause(sql.getHavingClause())
                 .build();
     }
 

@@ -10,6 +10,7 @@ import com.yahoo.elide.core.EntityDictionary;
 import com.yahoo.elide.core.Path;
 import com.yahoo.elide.core.filter.FilterPredicate;
 import com.yahoo.elide.core.filter.Operator;
+import com.yahoo.elide.core.filter.dialect.ParseException;
 import com.yahoo.elide.core.filter.dialect.RSQLFilterDialect;
 import com.yahoo.elide.core.filter.expression.AndFilterExpression;
 import com.yahoo.elide.core.filter.expression.OrFilterExpression;
@@ -415,9 +416,6 @@ public abstract class SQLUnitTest {
             Map<String, Sorting.SortOrder> sortMap = new TreeMap<>();
             sortMap.put("highScoreNoAgg", Sorting.SortOrder.desc);
 
-            // JOIN / subquery
-            Table playerStatsViewTable = engine.getTable("playerStatsView");
-
             // WHERE / HAVING
             FilterPredicate predicate = new FilterPredicate(
                     new Path(PlayerStats.class, dictionary, "highScoreNoAgg"),
@@ -435,19 +433,26 @@ public abstract class SQLUnitTest {
             );
 
             //GROUP BY in query
-            Query paginationQuery = Query.builder()
-                    .table(playerStatsTable)
-                    .metric(invoke(playerStatsViewTable.getMetric("highScore")))
-                    .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
-                    .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
-                    .pagination(pagination)
-                    .sorting(new SortingImpl(sortMap, PlayerStats.class, dictionary))
-                    .whereFilter(predicate)
-                    .havingFilter(predicate)
-                    .build();
-            testQueries.put(TestQueryName.COMPLICATED, paginationQuery);
-
+            try {
+                Query paginationQuery = Query.builder()
+                        .table(playerStatsTable)
+                        .metric(invoke(playerStatsTable.getMetric("highScore")))
+                        .groupByDimension(toProjection(playerStatsTable.getDimension("overallRating")))
+                        .timeDimension(toProjection(playerStatsTable.getTimeDimension("recordedDate"), TimeGrain.DAY))
+                        .pagination(pagination)
+                        .sorting(new SortingImpl(sortMap, PlayerStats.class, dictionary))
+                        .whereFilter(predicate)
+                        // force a join to look up countryIsoCode
+                        .havingFilter(filterParser.parseFilterExpression("countryIsoCode==USA",
+                                PlayerStats.class, false))
+                        .build();
+                testQueries.put(TestQueryName.COMPLICATED, paginationQuery);
+            } catch (ParseException pe) {
+                throw new RuntimeException(pe);
+            }
         }
+
+
     }
 
 }
